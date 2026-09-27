@@ -1,0 +1,9 @@
+{
+  "name": "veds",
+  "version": "1.0.0",
+  "description": "Veds — Share Your Screen. Connect Instantly.",
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev": "node --watch backend/server.js"
+  }
+}

@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Veds — Share Your Screen. Connect Instantly.</title>
+  <meta name="description" content="Connect two devices through a temporary passkey and share your screen directly from your browser with real-time peer-to-peer WebRTC.">
+  <meta name="keywords" content="screen sharing, WebRTC, real-time, browser screen share, P2P, Veds">
+  
+  <!-- Favicon SVG -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232563eb'><path d='M4 6a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm2 0v8h12V6H6zm-3 13a1 1 0 011-1h16a1 1 0 110 2H4a1 1 0 01-1-1z'/></svg>">
+  
+  <!-- Google Fonts: Inter & Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- CSS Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+  
+  <!-- Socket.IO Client Library with Local Fallback -->
+  <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+  <script>
+    if (typeof io === "undefined") {
+      document.write('<script src="/socket.io/socket.io.js"><\/script>');
+    }
+  </script>
+</head>
+<body>
+  <!-- Global Toast Notification Container -->
+  <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- Navigation Bar -->
+  <header class="header">
+    <div class="nav-container">
+      <a href="#home" class="brand" id="brandLogo" aria-label="Veds Home">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+            <line x1="8" y1="21" x2="16" y2="21"></line>
+            <line x1="12" y1="17" x2="12" y2="21"></line>
+          </svg>
+        </div>
+        <span class="brand-name">Veds</span>
+      </a>
+
+      <nav class="nav-menu" id="navMenu">
+        <a href="#home" class="nav-link active">Home</a>
+        <a href="#how-it-works" class="nav-link">How It Works</a>
+        <a href="#security" class="nav-link">Security</a>
+        <a href="#about" class="nav-link">About</a>
+        <a href="#connect" class="nav-link btn-nav-connect" id="navConnectBtn">Connect</a>
+      </nav>
+
+      <button class="mobile-toggle" id="mobileMenuBtn" aria-label="Toggle navigation menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <!-- HERO / CONNECTION SECTION -->
+    <section class="hero-section" id="home">
+      <div class="container hero-container">
+        
+        <!-- INITIAL LANDING / CONNECT VIEW (Visible when not in an active room) -->
+        <div id="connectView" class="connect-view">
+          <div class="hero-header">
+            <div class="hero-badge">
+              <span class="badge-dot"></span>
+              Browser-Based WebRTC Screen Sharing
+            </div>
+            <h1 class="hero-title">Share Your Screen.<br><span class="gradient-text">Connect Instantly.</span></h1>
+            <p class="hero-subtitle">
+              Connect two devices through a temporary passkey and share your screen directly from your browser.
+            </p>
+          </div>
+
+          <!-- Action Cards Container -->
+          <div class="action-grid" id="connect">
+            <!-- Create Room Card -->
+            <div class="card action-card create-card" id="cardCreateRoom">
+              <div class="card-icon create-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 5v14M5 12h14"></path>
+                </svg>
+              </div>
+              <h2 class="card-title">Create Room</h2>
+              <p class="card-desc">Generate a secure temporary passkey to share with another laptop, desktop, or mobile device.</p>
+              <button class="btn btn-primary btn-block" id="btnCreateRoom">
+                <span>Create Room</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </button>
+            </div>
+
+            <!-- Join Room Card -->
+            <div class="card action-card join-card" id="cardJoinRoom">
+              <div class="card-icon join-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                  <polyline points="10 17 15 12 10 7"></polyline>
+                  <line x1="15" y1="12" x2="3" y2="12"></line>
+                </svg>
+              </div>
+              <h2 class="card-title">Join Room</h2>
+              <p class="card-desc">Enter the passkey generated on the other device to connect and view or share your screen.</p>
+              
+              <form id="joinRoomForm" class="join-form" onsubmit="return false;">
+                <div class="input-group">
+                  <label for="passkeyInput" class="visually-hidden">Enter Veds Passkey</label>
+                  <input 
+                    type="text" 
+                    id="passkeyInput" 
+                    class="input-passkey" 
+                    placeholder="VDS-583921" 
+                    maxlength="10" 
+                    autocomplete="off" 
+                    spellcheck="false"
+                    aria-label="Enter Veds Passkey"
+                    required
+                  >
+                </div>
+                <button type="submit" class="btn btn-secondary btn-block" id="btnJoinRoom">
+                  <span>Join Room</span>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                  </svg>
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- ACTIVE ROOM / SHARING WORKSPACE VIEW (Shown once room is created or joined) -->
+        <div id="roomView" class="room-view hidden" aria-live="polite">
+          
+          <!-- Workspace Header: Passkey & Real-time Status -->
+          <div class="workspace-header card">
+            <div class="room-meta">
+              <div class="meta-label">Active Room Passkey</div>
+              <div class="passkey-wrapper">
+                <span class="passkey-badge" id="displayPasskey">VDS-000000</span>
+                <button class="btn btn-sm btn-outline" id="btnCopyPasskey" title="Copy Passkey to Clipboard">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  </svg>
+                  <span id="copyBtnText">Copy</span>
+                </button>
+                <button class="btn btn-sm btn-outline" id="btnSharePasskey" title="Share Passkey">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                    <circle cx="18" cy="5" r="3"></circle>
+                    <circle cx="6" cy="12" r="3"></circle>
+                    <circle cx="18" cy="19" r="3"></circle>
+                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                  </svg>
+                  <span>Share</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Connection Status Indicator -->
+            <div class="connection-status-box">
+              <div class="status-indicator">
+                <span class="status-dot dot-waiting" id="statusDot"></span>
+                <span class="status-text" id="statusText">Waiting for another device...</span>
+              </div>
+              <div class="room-capacity-pill">Room Capacity: <strong id="roomCapacityText">1/2 Devices</strong></div>
+            </div>
+          </div>
+
+          <!-- Video Sharing Workspace Area -->
+          <div class="video-workspace card" id="videoWorkspaceContainer">
+            
+            <div class="video-area-header">
+              <div class="video-title-wrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                  <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                  <line x1="8" y1="21" x2="16" y2="21"></line>
+                  <line x1="12" y1="17" x2="12" y2="21"></line>
+                </svg>
+                <span id="videoAreaTitle">Remote Screen</span>
+              </div>
+              <div class="video-live-tag hidden" id="videoLiveTag">
+                <span class="live-pulse"></span> LIVE BROADCAST
+              </div>
+            </div>
+
+            <!-- Remote Video Element Container -->
+            <div class="video-stage" id="videoStage">
+              <!-- Actual WebRTC Remote Screen Video -->
+              <video id="remoteVideo" autoplay playsinline></video>
+
+              <!-- Local Screen Preview (Picture-in-Picture thumbnail) -->
+              <div class="local-preview-container hidden" id="localPreviewContainer" title="Your screen preview (Broadcasting)">
+                <div class="preview-badge">Your Screen (Broadcasting)</div>
+                <video id="localPreviewVideo" autoplay playsinline muted></video>
+              </div>
+
+              <!-- Placeholder / Standby UI when no one is sharing -->
+              <div class="video-placeholder" id="videoPlaceholder">
+                <div class="placeholder-icon-wrap" id="placeholderIconWrap">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="48" height="48">
+                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                    <line x1="8" y1="21" x2="16" y2="21"></line>
+                    <line x1="12" y1="17" x2="12" y2="21"></line>
+                  </svg>
+                </div>
+                <h3 class="placeholder-title" id="placeholderTitle">Waiting for screen broadcast</h3>
+                <p class="placeholder-subtitle" id="placeholderSubtitle">
+                  Connect device 2 using passkey <strong id="subPasskeyDisplay">VDS-XXXXXX</strong>. Once connected, either device can click "Share My Screen" below.
+                </p>
+              </div>
+            </div>
+
+            <!-- Interactive Control Bar -->
+            <div class="control-bar" id="controlBar">
+              <div class="controls-left">
+                <!-- Share My Screen Button -->
+                <button class="btn btn-primary" id="btnShareScreen">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="12" x2="14" y2="10"></line>
+                    <line x1="12" y1="12" x2="10" y2="10"></line>
+                  </svg>
+                  <span>Share My Screen</span>
+                </button>
+
+                <!-- Stop Sharing Button -->
+                <button class="btn btn-warning hidden" id="btnStopSharing">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                    <rect x="6" y="6" width="12" height="12" rx="2"></rect>
+                  </svg>
+                  <span>Stop Sharing</span>
+                </button>
+              </div>
+
+              <div class="controls-right">
+                <!-- Fullscreen Button -->
+                <button class="btn btn-secondary" id="btnFullscreen" title="Toggle Fullscreen">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18" id="fullscreenIcon">
+                    <polyline points="15 3 21 3 21 9"></polyline>
+                    <polyline points="9 21 3 21 3 15"></polyline>
+                    <line x1="21" y1="3" x2="14" y2="10"></line>
+                    <line x1="3" y1="21" x2="10" y2="14"></line>
+                  </svg>
+                  <span>Fullscreen</span>
+                </button>
+
+                <!-- Leave Room Button -->
+                <button class="btn btn-danger" id="btnLeaveRoom">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                  </svg>
+                  <span>Leave Room</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- HOW IT WORKS SECTION -->
+    <section class="section section-alt" id="how-it-works">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title">How Veds Works</h2>
+          <p class="section-subtitle">Effortless browser-to-browser screen sharing across operating systems in three simple steps.</p>
+        </div>
+
+        <div class="steps-grid">
+          <div class="step-card card">
+            <div class="step-number">01</div>
+            <h3 class="step-title">Create a Room</h3>
+            <p class="step-desc">Open Veds on Device A and click "Create Room" to generate a secure, temporary 6-digit passkey.</p>
+          </div>
+
+          <div class="step-card card">
+            <div class="step-number">02</div>
+            <h3 class="step-title">Join with Passkey</h3>
+            <p class="step-desc">Open Veds on Device B, enter the passkey, and click "Join Room". Both devices connect in real-time.</p>
+          </div>
+
+          <div class="step-card card">
+            <div class="step-number">03</div>
+            <h3 class="step-title">Two-Way Screen Share</h3>
+            <p class="step-desc">Click "Share My Screen" on either device. Audio and video are securely transmitted peer-to-peer via WebRTC.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECURITY & ARCHITECTURE SECTION -->
+    <section class="section" id="security">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title">Security & Architecture</h2>
+          <p class="section-subtitle">Transparent, lightweight, and engineered for privacy.</p>
+        </div>
+
+        <div class="security-grid">
+          <div class="security-card card">
+            <div class="sec-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+            </div>
+            <h3 class="sec-title">Peer-to-Peer Encryption</h3>
+            <p class="sec-desc">
+              Veds uses WebRTC for peer-to-peer media communication and a signaling server to help establish the connection. Once established, media flows directly between devices encrypted via standard DTLS/SRTP.
+            </p>
+          </div>
+
+          <div class="security-card card">
+            <div class="sec-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+              </svg>
+            </div>
+            <h3 class="sec-title">No Persistent Data Storage</h3>
+            <p class="sec-desc">
+              No database is used. Passkeys and rooms are kept in temporary backend server memory only while active and are immediately deleted when users leave.
+            </p>
+          </div>
+
+          <div class="security-card card">
+            <div class="sec-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+              </svg>
+            </div>
+            <h3 class="sec-title">No Cables or Extra Hardware</h3>
+            <p class="sec-desc">
+              Works without HDMI cords, USB cables, capture cards, or Raspberry Pi. Only modern browsers and an internet/network connection are needed.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ABOUT SECTION -->
+    <section class="section section-alt" id="about">
+      <div class="container">
+        <div class="about-wrapper card">
+          <div class="about-content">
+            <h2 class="about-title">About Veds</h2>
+            <p class="about-text">
+              <strong>Veds</strong> is built to make cross-device screen sharing frictionless. Whether you are presenting from a laptop to a conference display, reviewing a project with a colleague on another computer, or casting to a tablet, Veds establishes an instant two-way connection in seconds without signups, software installations, or proprietary dongles.
+            </p>
+            <div class="features-badge-list">
+              <span class="feature-tag">Laptop → Phone</span>
+              <span class="feature-tag">Phone → Laptop</span>
+              <span class="feature-tag">Laptop → Laptop</span>
+              <span class="feature-tag">Desktop → Laptop</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container footer-container">
+      <div class="footer-brand">
+        <div class="brand">
+          <div class="brand-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+              <line x1="8" y1="21" x2="16" y2="21"></line>
+              <line x1="12" y1="17" x2="12" y2="21"></line>
+            </svg>
+          </div>
+          <span class="brand-name">Veds</span>
+        </div>
+        <p class="footer-tagline">Share Your Screen. Connect Instantly.</p>
+      </div>
+
+      <div class="footer-links">
+        <a href="#home">Home</a>
+        <a href="#how-it-works">How It Works</a>
+        <a href="#security">Security</a>
+        <a href="#about">About</a>
+      </div>
+
+      <div class="footer-copy">
+        <p>&copy; 2026 Veds. Peer-to-peer browser screen sharing.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- App Logic -->
+  <script src="script.js"></script>
+</body>
+</html>
