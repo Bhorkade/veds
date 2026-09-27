@@ -10,7 +10,7 @@
 // Default backend URL; automatically adapts to current host/port in browser.
 // ==========================================
 const CONFIG = {
-  SOCKET_SERVER_URL: "http://localhost:5000"
+  SOCKET_SERVER_URL: "https://veds-seven.vercel.app"
 };
 
 /**
@@ -97,7 +97,7 @@ function showToast(message, type = "info") {
   if (!toastContainer) return;
   const toast = document.createElement("div");
   toast.className = `toast toast-${type}`;
-  
+
   let iconSvg = "";
   if (type === "success") {
     iconSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" width="20" height="20"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
@@ -492,11 +492,11 @@ async function startSharingScreen() {
 
     // Find existing video sender from transceivers or senders
     const transceivers = peerConnection.getTransceivers ? peerConnection.getTransceivers() : [];
-    const videoTransceiver = transceivers.find((t) => 
+    const videoTransceiver = transceivers.find((t) =>
       (t.receiver && t.receiver.track && t.receiver.track.kind === "video") ||
       (t.sender && t.sender.track && t.sender.track.kind === "video")
     );
-    const videoSender = videoTransceiver ? videoTransceiver.sender : 
+    const videoSender = videoTransceiver ? videoTransceiver.sender :
       peerConnection.getSenders().find((s) => s.track && s.track.kind === "video");
 
     if (videoSender) {
@@ -509,7 +509,7 @@ async function startSharingScreen() {
 
     // Audio sender if available
     if (audioTrack) {
-      const audioTransceiver = transceivers.find((t) => 
+      const audioTransceiver = transceivers.find((t) =>
         (t.receiver && t.receiver.track && t.receiver.track.kind === "audio") ||
         (t.sender && t.sender.track && t.sender.track.kind === "audio")
       );
@@ -624,7 +624,7 @@ function hideRemoteScreenUI() {
   remoteVideo.classList.remove("active");
   videoPlaceholder.classList.remove("hidden");
   videoLiveTag.classList.add("hidden");
-  
+
   if (peerConnection && (peerConnection.connectionState === "connected" || peerConnection.iceConnectionState === "connected")) {
     placeholderTitle.textContent = "Device connected";
     placeholderSubtitle.textContent = "Click 'Share My Screen' below to start broadcasting, or wait for the other device to share.";
@@ -780,7 +780,7 @@ window.addEventListener("DOMContentLoaded", () => {
   btnCreateRoom.addEventListener("click", () => {
     btnCreateRoom.disabled = true;
     btnCreateRoom.innerHTML = `<span>Creating...</span>`;
-    
+
     initSocket();
     socket.emit("create-room", (response) => {
       if (!response || !response.success) {
