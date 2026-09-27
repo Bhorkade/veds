@@ -10,10 +10,9 @@
    ============================================================================ */
 
 const CONFIG = {
-  PRODUCTION_SOCKET_SERVER_URL: "https://YOUR-VEDS-BACKEND.onrender.com",
+  PRODUCTION_SOCKET_SERVER_URL: "https://veds-gdrg.onrender.com",
   LOCAL_SOCKET_SERVER_URL: "http://localhost:5000"
 };
-
 
 /* ============================================================================
    SOCKET SERVER URL
