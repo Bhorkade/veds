@@ -1,3 +1,4 @@
+```javascript
 /**
  * ============================================================================
  * VEDS — Share Your Screen. Connect Instantly.
@@ -20,7 +21,6 @@ const CONFIG = {
 
 function getSocketServerUrl() {
   const hostname = window.location.hostname;
-  const port = window.location.port;
 
   // Local development
   if (
@@ -31,9 +31,8 @@ function getSocketServerUrl() {
   }
 
   // Production
-  return CONFIG.SOCKET_SERVER_URL;
+  return CONFIG.PRODUCTION_SOCKET_SERVER_URL;
 }
-
 
 /* ============================================================================
    WEBRTC CONFIGURATION
@@ -53,7 +52,6 @@ const RTC_CONFIGURATION = {
   ]
 };
 
-
 /* ============================================================================
    APPLICATION STATE
    ============================================================================ */
@@ -61,29 +59,22 @@ const RTC_CONFIGURATION = {
 let socket = null;
 
 let currentRoomCode = null;
-
 let isInitiator = false;
-
 let polite = false;
 
 let peerConnection = null;
 
 let localScreenStream = null;
-
 let remoteStream = null;
 
 let isSharingScreen = false;
-
 let isRemoteSharing = false;
 
 let pendingIceCandidates = [];
 
 let makingOffer = false;
-
 let ignoreOffer = false;
-
 let isSocketInitializing = false;
-
 
 /* ============================================================================
    DOM ELEMENTS
@@ -110,7 +101,6 @@ const statusText = document.getElementById("statusText");
 const roomCapacityText = document.getElementById("roomCapacityText");
 
 const videoStage = document.getElementById("videoStage");
-
 const remoteVideo = document.getElementById("remoteVideo");
 
 const localPreviewContainer =
@@ -155,7 +145,6 @@ const navMenu =
 const navConnectBtn =
   document.getElementById("navConnectBtn");
 
-
 /* ============================================================================
    TOAST
    ============================================================================ */
@@ -165,80 +154,74 @@ function showToast(message, type = "info") {
 
   const toast = document.createElement("div");
 
-  toast.className = `toast toast-${type}`;
+  toast.className = `toast toast - ${ type } `;
 
   let iconSvg = "";
 
   if (type === "success") {
     iconSvg = `
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="#10b981"
-        stroke-width="2.5"
-        width="20"
-        height="20"
-      >
-        <polyline points="20 6 9 17 4 12"></polyline>
-      </svg>
-    `;
-  }
-
-  else if (type === "error") {
+  < svg
+viewBox = "0 0 24 24"
+fill = "none"
+stroke = "#10b981"
+stroke - width="2.5"
+width = "20"
+height = "20"
+  >
+  <polyline points="20 6 9 17 4 12"></polyline>
+      </svg >
+  `;
+  } else if (type === "error") {
     iconSvg = `
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="#ef4444"
-        stroke-width="2.5"
-        width="20"
-        height="20"
-      >
+  < svg
+viewBox = "0 0 24 24"
+fill = "none"
+stroke = "#ef4444"
+stroke - width="2.5"
+width = "20"
+height = "20"
+  >
         <circle cx="12" cy="12" r="10"></circle>
         <line x1="15" y1="9" x2="9" y2="15"></line>
         <line x1="9" y1="9" x2="15" y2="15"></line>
-      </svg>
-    `;
-  }
-
-  else if (type === "warning") {
+      </svg >
+  `;
+  } else if (type === "warning") {
     iconSvg = `
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="#f59e0b"
-        stroke-width="2.5"
-        width="20"
-        height="20"
-      >
+  < svg
+viewBox = "0 0 24 24"
+fill = "none"
+stroke = "#f59e0b"
+stroke - width="2.5"
+width = "20"
+height = "20"
+  >
         <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
         <line x1="12" y1="9" x2="12" y2="13"></line>
         <line x1="12" y1="17" x2="12.01" y2="17"></line>
-      </svg>
-    `;
-  }
-
-  else {
+      </svg >
+  `;
+  } else {
     iconSvg = `
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="#3b82f6"
-        stroke-width="2.5"
-        width="20"
-        height="20"
-      >
+  < svg
+viewBox = "0 0 24 24"
+fill = "none"
+stroke = "#3b82f6"
+stroke - width="2.5"
+width = "20"
+height = "20"
+  >
         <circle cx="12" cy="12" r="10"></circle>
         <line x1="12" y1="16" x2="12" y2="12"></line>
         <line x1="12" y1="8" x2="12.01" y2="8"></line>
-      </svg>
-    `;
+      </svg >
+  `;
   }
 
   toast.innerHTML = `
-    ${iconSvg}
-    <span>${message}</span>
-  `;
+    ${ iconSvg }
+<span>${message}</span>
+`;
 
   toastContainer.appendChild(toast);
 
@@ -253,7 +236,6 @@ function showToast(message, type = "info") {
     }, 250);
   }, 4000);
 }
-
 
 /* ============================================================================
    SOCKET.IO INITIALIZATION
@@ -279,24 +261,17 @@ function initSocket() {
 
   socket = io(serverUrl, {
     transports: ["websocket", "polling"],
-
     reconnection: true,
-
     reconnectionAttempts: Infinity,
-
     reconnectionDelay: 1000,
-
     reconnectionDelayMax: 5000,
-
-    timeout: 10000,
-
+    timeout: 15000,
     autoConnect: true
   });
 
-
-  /* ------------------------------------------------------------
+  /* --------------------------------------------------------------------------
      CONNECT
-     ------------------------------------------------------------ */
+     -------------------------------------------------------------------------- */
 
   socket.on("connect", () => {
     isSocketInitializing = false;
@@ -312,10 +287,9 @@ function initSocket() {
     );
   });
 
-
-  /* ------------------------------------------------------------
+  /* --------------------------------------------------------------------------
      DISCONNECT
-     ------------------------------------------------------------ */
+     -------------------------------------------------------------------------- */
 
   socket.on("disconnect", (reason) => {
     console.warn(
@@ -331,10 +305,9 @@ function initSocket() {
     }
   });
 
-
-  /* ------------------------------------------------------------
+  /* --------------------------------------------------------------------------
      CONNECT ERROR
-     ------------------------------------------------------------ */
+     -------------------------------------------------------------------------- */
 
   socket.on("connect_error", (error) => {
     isSocketInitializing = false;
@@ -350,10 +323,9 @@ function initSocket() {
     );
   });
 
-
-  /* ============================================================
+  /* ==========================================================================
      ROOM CREATED
-     ============================================================ */
+     ========================================================================== */
 
   socket.on("room-created", ({ roomCode }) => {
     console.log(
@@ -362,9 +334,7 @@ function initSocket() {
     );
 
     currentRoomCode = roomCode;
-
     isInitiator = true;
-
     polite = false;
 
     showRoomView(roomCode);
@@ -382,10 +352,9 @@ function initSocket() {
     );
   });
 
-
-  /* ============================================================
+  /* ==========================================================================
      ROOM JOINED
-     ============================================================ */
+     ========================================================================== */
 
   socket.on("room-joined", ({ roomCode }) => {
     console.log(
@@ -394,9 +363,7 @@ function initSocket() {
     );
 
     currentRoomCode = roomCode;
-
     isInitiator = false;
-
     polite = true;
 
     showRoomView(roomCode);
@@ -411,10 +378,9 @@ function initSocket() {
     setupPeerConnection();
   });
 
-
-  /* ============================================================
+  /* ==========================================================================
      PEER JOINED
-     ============================================================ */
+     ========================================================================== */
 
   socket.on("peer-joined", async ({ peerId }) => {
     console.log(
@@ -439,10 +405,9 @@ function initSocket() {
     await createAndSendOffer();
   });
 
-
-  /* ============================================================
+  /* ==========================================================================
      JOIN ERROR
-     ============================================================ */
+     ========================================================================== */
 
   socket.on("join-error", ({ message }) => {
     console.error(
@@ -458,15 +423,13 @@ function initSocket() {
     );
   });
 
-
-  /* ============================================================
+  /* ==========================================================================
      OFFER
-     ============================================================ */
+     ========================================================================== */
 
   socket.on(
     "offer",
     async ({ sdp, senderId }) => {
-
       console.log(
         "[WebRTC] Offer received from:",
         senderId
@@ -477,7 +440,6 @@ function initSocket() {
       }
 
       try {
-
         const offerCollision =
           sdp.type === "offer" &&
           (
@@ -498,7 +460,6 @@ function initSocket() {
         }
 
         if (offerCollision) {
-
           console.log(
             "[WebRTC] Rolling back local offer"
           );
@@ -512,7 +473,7 @@ function initSocket() {
           new RTCSessionDescription(sdp)
         );
 
-        flushPendingIceCandidates();
+        await flushPendingIceCandidates();
 
         const answer =
           await peerConnection.createAnswer();
@@ -529,9 +490,7 @@ function initSocket() {
         console.log(
           "[WebRTC] Answer sent"
         );
-
       } catch (error) {
-
         console.error(
           "[WebRTC] Offer error:",
           error
@@ -545,15 +504,13 @@ function initSocket() {
     }
   );
 
-
-  /* ============================================================
+  /* ==========================================================================
      ANSWER
-     ============================================================ */
+     ========================================================================== */
 
   socket.on(
     "answer",
     async ({ sdp, senderId }) => {
-
       console.log(
         "[WebRTC] Answer received from:",
         senderId
@@ -564,26 +521,22 @@ function initSocket() {
       }
 
       try {
-
         if (
           peerConnection.signalingState ===
           "have-local-offer"
         ) {
-
           await peerConnection.setRemoteDescription(
             new RTCSessionDescription(sdp)
           );
 
-          flushPendingIceCandidates();
+          await flushPendingIceCandidates();
 
           setConnectionStatus(
             "connected",
             "Connected"
           );
         }
-
       } catch (error) {
-
         console.error(
           "[WebRTC] Answer error:",
           error
@@ -592,15 +545,13 @@ function initSocket() {
     }
   );
 
-
-  /* ============================================================
+  /* ==========================================================================
      ICE CANDIDATE
-     ============================================================ */
+     ========================================================================== */
 
   socket.on(
     "ice-candidate",
     async ({ candidate }) => {
-
       if (!candidate) {
         return;
       }
@@ -610,37 +561,29 @@ function initSocket() {
         peerConnection.remoteDescription &&
         peerConnection.remoteDescription.type
       ) {
-
         try {
-
           await peerConnection.addIceCandidate(
             new RTCIceCandidate(candidate)
           );
-
         } catch (error) {
-
           console.warn(
             "[WebRTC] ICE candidate error:",
             error
           );
         }
-
       } else {
-
         pendingIceCandidates.push(candidate);
       }
     }
   );
 
-
-  /* ============================================================
+  /* ==========================================================================
      SCREEN STATE
-     ============================================================ */
+     ========================================================================== */
 
   socket.on(
     "screen-state",
     ({ isSharing }) => {
-
       console.log(
         "[Screen State]:",
         isSharing
@@ -657,15 +600,13 @@ function initSocket() {
     }
   );
 
-
-  /* ============================================================
+  /* ==========================================================================
      PEER LEFT
-     ============================================================ */
+     ========================================================================== */
 
   socket.on(
     "peer-left",
     () => {
-
       console.log(
         "[Room] Peer left"
       );
@@ -688,15 +629,13 @@ function initSocket() {
     }
   );
 
-
-  /* ============================================================
+  /* ==========================================================================
      LEFT ROOM
-     ============================================================ */
+     ========================================================================== */
 
   socket.on(
     "left-room",
     () => {
-
       console.log(
         "[Room] Successfully left"
       );
@@ -705,36 +644,27 @@ function initSocket() {
     }
   );
 
-
   return socket;
 }
-
 
 /* ============================================================================
    FLUSH ICE CANDIDATES
    ============================================================================ */
 
 async function flushPendingIceCandidates() {
-
   if (!peerConnection) {
     return;
   }
 
-  while (
-    pendingIceCandidates.length > 0
-  ) {
-
+  while (pendingIceCandidates.length > 0) {
     const candidate =
       pendingIceCandidates.shift();
 
     try {
-
       await peerConnection.addIceCandidate(
         new RTCIceCandidate(candidate)
       );
-
     } catch (error) {
-
       console.warn(
         "[WebRTC] Buffered ICE error:",
         error
@@ -743,13 +673,11 @@ async function flushPendingIceCandidates() {
   }
 }
 
-
 /* ============================================================================
    CREATE PEER CONNECTION
    ============================================================================ */
 
 function setupPeerConnection() {
-
   if (peerConnection) {
     return peerConnection;
   }
@@ -763,10 +691,9 @@ function setupPeerConnection() {
       RTC_CONFIGURATION
     );
 
-
-  /* ------------------------------------------------------------
+  /* --------------------------------------------------------------------------
      Remote Media Stream
-     ------------------------------------------------------------ */
+     -------------------------------------------------------------------------- */
 
   remoteStream =
     new MediaStream();
@@ -776,20 +703,18 @@ function setupPeerConnection() {
       remoteStream;
   }
 
-
-  /* ------------------------------------------------------------
+  /* --------------------------------------------------------------------------
      ICE Candidate
-     ------------------------------------------------------------ */
+     -------------------------------------------------------------------------- */
 
   peerConnection.onicecandidate =
     (event) => {
-
       if (
         event.candidate &&
         currentRoomCode &&
-        socket
+        socket &&
+        socket.connected
       ) {
-
         socket.emit(
           "ice-candidate",
           {
@@ -800,14 +725,24 @@ function setupPeerConnection() {
       }
     };
 
+  /* --------------------------------------------------------------------------
+     ICE Gathering State
+     -------------------------------------------------------------------------- */
 
-  /* ------------------------------------------------------------
+  peerConnection.onicegatheringstatechange =
+    () => {
+      console.log(
+        "[WebRTC] ICE gathering:",
+        peerConnection.iceGatheringState
+      );
+    };
+
+  /* --------------------------------------------------------------------------
      Remote Track
-     ------------------------------------------------------------ */
+     -------------------------------------------------------------------------- */
 
   peerConnection.ontrack =
     (event) => {
-
       console.log(
         "[WebRTC] Remote track:",
         event.track.kind
@@ -827,18 +762,18 @@ function setupPeerConnection() {
           );
 
       if (!exists) {
-
         remoteStream.addTrack(
           event.track
         );
       }
 
-      remoteVideo.srcObject =
-        remoteStream;
+      if (remoteVideo) {
+        remoteVideo.srcObject =
+          remoteStream;
+      }
 
       event.track.onunmute =
         () => {
-
           console.log(
             "[WebRTC] Remote video active"
           );
@@ -851,7 +786,6 @@ function setupPeerConnection() {
 
       event.track.onmute =
         () => {
-
           console.log(
             "[WebRTC] Remote track muted"
           );
@@ -859,7 +793,6 @@ function setupPeerConnection() {
 
       event.track.onended =
         () => {
-
           console.log(
             "[WebRTC] Remote track ended"
           );
@@ -871,14 +804,12 @@ function setupPeerConnection() {
         };
     };
 
-
-  /* ------------------------------------------------------------
+  /* --------------------------------------------------------------------------
      Connection State
-     ------------------------------------------------------------ */
+     -------------------------------------------------------------------------- */
 
   peerConnection.onconnectionstatechange =
     () => {
-
       if (!peerConnection) {
         return;
       }
@@ -892,36 +823,28 @@ function setupPeerConnection() {
       );
 
       switch (state) {
-
         case "connected":
-
           setConnectionStatus(
             "connected",
             "Connected"
           );
-
           break;
 
         case "connecting":
-
           setConnectionStatus(
             "connecting",
             "Connecting..."
           );
-
           break;
 
         case "disconnected":
-
           setConnectionStatus(
             "disconnected",
             "Disconnected"
           );
-
           break;
 
         case "failed":
-
           setConnectionStatus(
             "failed",
             "Connection Failed"
@@ -931,48 +854,58 @@ function setupPeerConnection() {
             "WebRTC connection failed",
             "error"
           );
-
           break;
 
         case "closed":
-
           setConnectionStatus(
             "disconnected",
             "Connection closed"
           );
-
           break;
       }
     };
 
-
-  /* ------------------------------------------------------------
+  /* --------------------------------------------------------------------------
      ICE Connection State
-     ------------------------------------------------------------ */
+     -------------------------------------------------------------------------- */
 
   peerConnection.oniceconnectionstatechange =
     () => {
-
       if (!peerConnection) {
         return;
       }
 
+      const state =
+        peerConnection.iceConnectionState;
+
       console.log(
         "[WebRTC] ICE:",
-        peerConnection.iceConnectionState
+        state
       );
 
-      if (
-        peerConnection.iceConnectionState ===
-        "failed"
-      ) {
+      if (state === "checking") {
+        setConnectionStatus(
+          "connecting",
+          "Checking connection..."
+        );
+      }
+
+      if (state === "connected" ||
+          state === "completed") {
+        setConnectionStatus(
+          "connected",
+          "Connected"
+        );
+      }
+
+      if (state === "failed") {
+        console.warn(
+          "[WebRTC] ICE failed - restarting ICE"
+        );
 
         try {
-
           peerConnection.restartIce();
-
         } catch (error) {
-
           console.warn(
             "[WebRTC] ICE restart failed:",
             error
@@ -981,26 +914,32 @@ function setupPeerConnection() {
       }
     };
 
+  /* --------------------------------------------------------------------------
+     ICE Connection Candidate Error
+     -------------------------------------------------------------------------- */
 
-  /* ------------------------------------------------------------
+  peerConnection.onicecandidateerror =
+    (event) => {
+      console.warn(
+        "[WebRTC] ICE candidate error:",
+        event
+      );
+    };
+
+  /* --------------------------------------------------------------------------
      Add Existing Screen Track
-     ------------------------------------------------------------ */
+     -------------------------------------------------------------------------- */
 
   if (localScreenStream) {
-
     localScreenStream
       .getTracks()
       .forEach(track => {
-
         peerConnection.addTrack(
           track,
           localScreenStream
         );
-
       });
-
   } else {
-
     /*
      * Create transceivers so both devices
      * can share screen later.
@@ -1021,16 +960,13 @@ function setupPeerConnection() {
     );
   }
 
-
-  /* ------------------------------------------------------------
+  /* --------------------------------------------------------------------------
      Negotiation Needed
-     ------------------------------------------------------------ */
+     -------------------------------------------------------------------------- */
 
   peerConnection.onnegotiationneeded =
     async () => {
-
       try {
-
         if (makingOffer) {
           return;
         }
@@ -1041,7 +977,6 @@ function setupPeerConnection() {
           "stable" &&
           !peerConnection.currentRemoteDescription
         ) {
-
           return;
         }
 
@@ -1051,10 +986,10 @@ function setupPeerConnection() {
 
         if (
           socket &&
+          socket.connected &&
           currentRoomCode &&
           peerConnection.localDescription
         ) {
-
           socket.emit(
             "offer",
             {
@@ -1063,42 +998,46 @@ function setupPeerConnection() {
                 peerConnection.localDescription
             }
           );
+
+          console.log(
+            "[WebRTC] Negotiation offer sent"
+          );
         }
-
       } catch (error) {
-
         console.error(
           "[WebRTC] Negotiation error:",
           error
         );
-
       } finally {
-
         makingOffer = false;
       }
     };
 
-
   return peerConnection;
 }
-
 
 /* ============================================================================
    CREATE OFFER
    ============================================================================ */
 
 async function createAndSendOffer() {
-
   if (!peerConnection) {
     setupPeerConnection();
   }
 
-  if (!socket || !currentRoomCode) {
+  if (
+    !socket ||
+    !socket.connected ||
+    !currentRoomCode
+  ) {
+    console.warn(
+      "[WebRTC] Cannot create offer: socket/room unavailable"
+    );
+
     return;
   }
 
   try {
-
     makingOffer = true;
 
     const offer =
@@ -1123,32 +1062,25 @@ async function createAndSendOffer() {
     console.log(
       "[WebRTC] Offer sent"
     );
-
   } catch (error) {
-
     console.error(
       "[WebRTC] Offer creation error:",
       error
     );
-
   } finally {
-
     makingOffer = false;
   }
 }
-
 
 /* ============================================================================
    START SCREEN SHARING
    ============================================================================ */
 
 async function startSharingScreen() {
-
   if (
     !navigator.mediaDevices ||
     !navigator.mediaDevices.getDisplayMedia
   ) {
-
     showToast(
       "Screen sharing is not supported in this browser.",
       "error"
@@ -1157,12 +1089,10 @@ async function startSharingScreen() {
     return;
   }
 
-
   if (
     !peerConnection ||
     !currentRoomCode
   ) {
-
     showToast(
       "Please connect another device first.",
       "warning"
@@ -1171,40 +1101,28 @@ async function startSharingScreen() {
     return;
   }
 
-
   try {
-
     console.log(
       "[ScreenShare] Requesting screen..."
     );
 
     let stream;
 
-
-    /* ------------------------------------------------------------
+    /* ------------------------------------------------------------------------
        Try Screen + Audio
-       ------------------------------------------------------------ */
+       ------------------------------------------------------------------------ */
 
     try {
-
       stream =
         await navigator.mediaDevices
           .getDisplayMedia({
             video: true,
             audio: true
           });
-
     } catch (error) {
-
-      /*
-       * Browser may not support system audio.
-       * Try video-only.
-       */
-
       if (
         error.name === "NotAllowedError"
       ) {
-
         throw error;
       }
 
@@ -1219,19 +1137,16 @@ async function startSharingScreen() {
           });
     }
 
-
     localScreenStream =
       stream;
 
     isSharingScreen = true;
 
-
-    /* ------------------------------------------------------------
+    /* ------------------------------------------------------------------------
        Local Preview
-       ------------------------------------------------------------ */
+       ------------------------------------------------------------------------ */
 
     if (localPreviewVideo) {
-
       localPreviewVideo.srcObject =
         localScreenStream;
 
@@ -1239,17 +1154,16 @@ async function startSharingScreen() {
 
       localPreviewVideo
         .play()
-        .catch(() => { });
+        .catch(() => {});
     }
 
     localPreviewContainer
       ?.classList
       .remove("hidden");
 
-
-    /* ------------------------------------------------------------
+    /* ------------------------------------------------------------------------
        Buttons
-       ------------------------------------------------------------ */
+       ------------------------------------------------------------------------ */
 
     btnShareScreen
       ?.classList
@@ -1259,29 +1173,25 @@ async function startSharingScreen() {
       ?.classList
       .remove("hidden");
 
-
-    /* ------------------------------------------------------------
+    /* ------------------------------------------------------------------------
        Video Track
-       ------------------------------------------------------------ */
+       ------------------------------------------------------------------------ */
 
     const videoTrack =
       stream.getVideoTracks()[0];
 
     if (!videoTrack) {
-
       throw new Error(
         "No video track was created."
       );
     }
 
-
     const audioTrack =
       stream.getAudioTracks()[0];
 
-
-    /* ------------------------------------------------------------
+    /* ------------------------------------------------------------------------
        Find Video Sender
-       ------------------------------------------------------------ */
+       ------------------------------------------------------------------------ */
 
     let videoSender =
       peerConnection
@@ -1292,9 +1202,7 @@ async function startSharingScreen() {
             sender.track.kind === "video"
         );
 
-
     if (!videoSender) {
-
       const videoTransceiver =
         peerConnection
           .getTransceivers()
@@ -1305,34 +1213,27 @@ async function startSharingScreen() {
           );
 
       if (videoTransceiver) {
-
         videoSender =
           videoTransceiver.sender;
       }
     }
 
-
     if (videoSender) {
-
       await videoSender.replaceTrack(
         videoTrack
       );
-
     } else {
-
       peerConnection.addTrack(
         videoTrack,
         stream
       );
     }
 
-
-    /* ------------------------------------------------------------
+    /* ------------------------------------------------------------------------
        Audio
-       ------------------------------------------------------------ */
+       ------------------------------------------------------------------------ */
 
     if (audioTrack) {
-
       let audioSender =
         peerConnection
           .getSenders()
@@ -1343,7 +1244,6 @@ async function startSharingScreen() {
           );
 
       if (!audioSender) {
-
         const audioTransceiver =
           peerConnection
             .getTransceivers()
@@ -1360,13 +1260,10 @@ async function startSharingScreen() {
       }
 
       if (audioSender) {
-
         await audioSender.replaceTrack(
           audioTrack
         );
-
       } else {
-
         peerConnection.addTrack(
           audioTrack,
           stream
@@ -1374,16 +1271,15 @@ async function startSharingScreen() {
       }
     }
 
-
-    /* ------------------------------------------------------------
+    /* ------------------------------------------------------------------------
        Notify Peer
-       ------------------------------------------------------------ */
+       ------------------------------------------------------------------------ */
 
     if (
       socket &&
+      socket.connected &&
       currentRoomCode
     ) {
-
       socket.emit(
         "screen-state",
         {
@@ -1393,30 +1289,24 @@ async function startSharingScreen() {
       );
     }
 
-
     showToast(
       "Screen sharing started",
       "success"
     );
 
-
-    /* ------------------------------------------------------------
+    /* ------------------------------------------------------------------------
        Browser Stop Sharing
-       ------------------------------------------------------------ */
+       ------------------------------------------------------------------------ */
 
     videoTrack.onended =
       () => {
-
         console.log(
           "[ScreenShare] Browser stopped sharing"
         );
 
         stopSharingScreen();
       };
-
-
   } catch (error) {
-
     console.error(
       "[ScreenShare] Error:",
       error
@@ -1425,14 +1315,11 @@ async function startSharingScreen() {
     if (
       error.name === "NotAllowedError"
     ) {
-
       showToast(
         "Screen sharing permission was denied.",
         "warning"
       );
-
     } else {
-
       showToast(
         "Unable to start screen sharing.",
         "error"
@@ -1441,15 +1328,12 @@ async function startSharingScreen() {
   }
 }
 
-
 /* ============================================================================
    STOP SCREEN SHARING
    ============================================================================ */
 
 async function stopSharingScreen() {
-
   if (localScreenStream) {
-
     localScreenStream
       .getTracks()
       .forEach(track => {
@@ -1461,10 +1345,9 @@ async function stopSharingScreen() {
 
   isSharingScreen = false;
 
-
-  /* ------------------------------------------------------------
+  /* --------------------------------------------------------------------------
      Local Preview
-     ------------------------------------------------------------ */
+     -------------------------------------------------------------------------- */
 
   if (localPreviewVideo) {
     localPreviewVideo.srcObject = null;
@@ -1474,10 +1357,9 @@ async function stopSharingScreen() {
     ?.classList
     .add("hidden");
 
-
-  /* ------------------------------------------------------------
+  /* --------------------------------------------------------------------------
      Buttons
-     ------------------------------------------------------------ */
+     -------------------------------------------------------------------------- */
 
   btnShareScreen
     ?.classList
@@ -1487,26 +1369,19 @@ async function stopSharingScreen() {
     ?.classList
     .add("hidden");
 
-
-  /* ------------------------------------------------------------
+  /* --------------------------------------------------------------------------
      Remove Local Tracks
-     ------------------------------------------------------------ */
+     -------------------------------------------------------------------------- */
 
   if (peerConnection) {
-
     const senders =
       peerConnection.getSenders();
 
     for (const sender of senders) {
-
       if (sender.track) {
-
         try {
-
           await sender.replaceTrack(null);
-
         } catch (error) {
-
           console.warn(
             "[WebRTC] Track removal error:",
             error
@@ -1516,16 +1391,15 @@ async function stopSharingScreen() {
     }
   }
 
-
-  /* ------------------------------------------------------------
+  /* --------------------------------------------------------------------------
      Notify Remote Device
-     ------------------------------------------------------------ */
+     -------------------------------------------------------------------------- */
 
   if (
     socket &&
+    socket.connected &&
     currentRoomCode
   ) {
-
     socket.emit(
       "screen-state",
       {
@@ -1535,20 +1409,17 @@ async function stopSharingScreen() {
     );
   }
 
-
   showToast(
     "Screen sharing stopped",
     "info"
   );
 }
 
-
 /* ============================================================================
    ROOM UI
    ============================================================================ */
 
 function showRoomView(roomCode) {
-
   if (displayPasskey) {
     displayPasskey.textContent =
       roomCode;
@@ -1573,13 +1444,11 @@ function showRoomView(roomCode) {
   });
 }
 
-
 /* ============================================================================
    SHOW REMOTE SCREEN
    ============================================================================ */
 
 function showRemoteScreenUI() {
-
   remoteVideo
     ?.classList
     .add("active");
@@ -1592,57 +1461,45 @@ function showRemoteScreenUI() {
     ?.classList
     .remove("hidden");
 
-
   if (
     remoteStream &&
+    remoteVideo &&
     remoteVideo.srcObject !== remoteStream
   ) {
-
     remoteVideo.srcObject =
       remoteStream;
   }
 
-
   if (remoteVideo) {
-
     remoteVideo.muted = false;
 
     const playPromise =
       remoteVideo.play();
 
     if (playPromise) {
-
       playPromise.catch(
         error => {
-
           console.warn(
             "[Video] Autoplay blocked:",
             error
           );
 
-          /*
-           * Retry muted if browser blocks
-           * autoplay with audio.
-           */
-
           remoteVideo.muted = true;
 
           remoteVideo
             .play()
-            .catch(() => { });
+            .catch(() => {});
         }
       );
     }
   }
 }
 
-
 /* ============================================================================
    HIDE REMOTE SCREEN
    ============================================================================ */
 
 function hideRemoteScreenUI() {
-
   remoteVideo
     ?.classList
     .remove("active");
@@ -1655,7 +1512,6 @@ function hideRemoteScreenUI() {
     ?.classList
     .add("hidden");
 
-
   if (
     peerConnection &&
     (
@@ -1665,7 +1521,6 @@ function hideRemoteScreenUI() {
       "connected"
     )
   ) {
-
     if (placeholderTitle) {
       placeholderTitle.textContent =
         "Device connected";
@@ -1675,29 +1530,25 @@ function hideRemoteScreenUI() {
       placeholderSubtitle.textContent =
         "Click 'Share My Screen' below to start broadcasting, or wait for the other device to share.";
     }
-
   } else {
-
     if (placeholderTitle) {
       placeholderTitle.textContent =
         "Waiting for screen broadcast";
     }
 
     if (placeholderSubtitle) {
-
       placeholderSubtitle.innerHTML =
         `
         Connect device 2 using passkey
-        <strong>
-          ${currentRoomCode || "VDS-XXXXXX"}
-        </strong>.
+<strong>
+  ${currentRoomCode || "VDS-XXXXXX"}
+</strong>.
         Once connected, either device can click
-        "Share My Screen".
+"Share My Screen".
         `;
     }
   }
 }
-
 
 /* ============================================================================
    CONNECTION STATUS
@@ -1707,14 +1558,12 @@ function setConnectionStatus(
   type,
   message
 ) {
-
   if (statusDot) {
-
     statusDot.className =
       "status-dot";
 
     statusDot.classList.add(
-      `dot-${type}`
+      `dot - ${ type } `
     );
   }
 
@@ -1723,26 +1572,24 @@ function setConnectionStatus(
       message;
   }
 
-
   if (
     type === "connected" &&
     placeholderTitle
   ) {
-
     if (
       placeholderTitle.textContent ===
       "Waiting for screen broadcast"
     ) {
-
       placeholderTitle.textContent =
         "Device connected";
 
-      placeholderSubtitle.textContent =
-        "Click 'Share My Screen' below to start broadcasting, or wait for the other device to share.";
+      if (placeholderSubtitle) {
+        placeholderSubtitle.textContent =
+          "Click 'Share My Screen' below to start broadcasting, or wait for the other device to share.";
+      }
     }
   }
 }
-
 
 /* ============================================================================
    ROOM CAPACITY
@@ -1752,31 +1599,24 @@ function setRoomCapacity(
   current,
   max
 ) {
-
   if (roomCapacityText) {
-
     roomCapacityText.textContent =
-      `${current}/${max} Devices`;
+      `${ current }/${max} Devices`;
   }
 }
-
 
 /* ============================================================================
    RESET PEER CONNECTION
    ============================================================================ */
 
 function resetPeerConnection() {
-
   if (peerConnection) {
-
     peerConnection.ontrack = null;
-
     peerConnection.onicecandidate = null;
-
     peerConnection.onconnectionstatechange = null;
-
     peerConnection.oniceconnectionstatechange = null;
-
+    peerConnection.onicecandidateerror = null;
+    peerConnection.onicegatheringstatechange = null;
     peerConnection.onnegotiationneeded = null;
 
     try {
@@ -1788,9 +1628,7 @@ function resetPeerConnection() {
     peerConnection = null;
   }
 
-
   if (remoteStream) {
-
     remoteStream
       .getTracks()
       .forEach(track => {
@@ -1800,30 +1638,23 @@ function resetPeerConnection() {
     remoteStream = null;
   }
 
-
   if (remoteVideo) {
     remoteVideo.srcObject = null;
   }
 
-
   pendingIceCandidates = [];
 
   makingOffer = false;
-
   ignoreOffer = false;
-
   isRemoteSharing = false;
 }
-
 
 /* ============================================================================
    RESET BUTTONS
    ============================================================================ */
 
 function resetActionButtons() {
-
   if (btnJoinRoom) {
-
     btnJoinRoom.disabled = false;
 
     btnJoinRoom.innerHTML = `
@@ -1840,9 +1671,7 @@ function resetActionButtons() {
     `;
   }
 
-
   if (btnCreateRoom) {
-
     btnCreateRoom.disabled = false;
 
     btnCreateRoom.innerHTML = `
@@ -1860,13 +1689,11 @@ function resetActionButtons() {
   }
 }
 
-
 /* ============================================================================
    RESET EVERYTHING
    ============================================================================ */
 
 function resetAllState() {
-
   if (isSharingScreen) {
     stopSharingScreen();
   }
@@ -1874,15 +1701,11 @@ function resetAllState() {
   resetPeerConnection();
 
   currentRoomCode = null;
-
   isInitiator = false;
-
   polite = false;
 
   isSharingScreen = false;
-
   isRemoteSharing = false;
-
 
   roomView
     ?.classList
@@ -1892,69 +1715,53 @@ function resetAllState() {
     ?.classList
     .remove("hidden");
 
-
   resetActionButtons();
-
 
   if (passkeyInput) {
     passkeyInput.value = "";
   }
 
-
   hideRemoteScreenUI();
 }
-
 
 /* ============================================================================
    COPY PASSKEY
    ============================================================================ */
 
 async function copyPasskey() {
-
   if (!currentRoomCode) {
     return;
   }
 
   try {
-
     if (
       navigator.clipboard &&
       navigator.clipboard.writeText
     ) {
-
       await navigator.clipboard.writeText(
         currentRoomCode
       );
-
     } else {
-
       throw new Error(
         "Clipboard API unavailable"
       );
     }
-
 
     showToast(
       "Passkey copied!",
       "success"
     );
 
-
     if (copyBtnText) {
-
       copyBtnText.textContent =
         "Copied!";
 
       setTimeout(() => {
-
         copyBtnText.textContent =
           "Copy";
-
       }, 2000);
     }
-
   } catch (error) {
-
     const tempInput =
       document.createElement("input");
 
@@ -1968,16 +1775,13 @@ async function copyPasskey() {
     tempInput.select();
 
     try {
-
       document.execCommand("copy");
 
       showToast(
         "Passkey copied!",
         "success"
       );
-
     } catch (copyError) {
-
       showToast(
         `Passkey: ${currentRoomCode}`,
         "info"
@@ -1990,21 +1794,17 @@ async function copyPasskey() {
   }
 }
 
-
 /* ============================================================================
    SHARE PASSKEY
    ============================================================================ */
 
 async function sharePasskey() {
-
   if (!currentRoomCode) {
     return;
   }
 
   if (navigator.share) {
-
     try {
-
       await navigator.share({
         title: "Join Veds Screen Share",
 
@@ -2014,31 +1814,24 @@ async function sharePasskey() {
         url:
           window.location.href
       });
-
     } catch (error) {
-
       if (
         error.name !==
         "AbortError"
       ) {
-
         await copyPasskey();
       }
     }
-
   } else {
-
     await copyPasskey();
   }
 }
-
 
 /* ============================================================================
    FULLSCREEN
    ============================================================================ */
 
 function toggleFullscreen() {
-
   const container =
     document.getElementById(
       "videoStage"
@@ -2048,28 +1841,20 @@ function toggleFullscreen() {
     return;
   }
 
-
   if (!document.fullscreenElement) {
-
     if (container.requestFullscreen) {
-
       container.requestFullscreen();
-
     } else if (
       container.webkitRequestFullscreen
     ) {
-
       container.webkitRequestFullscreen();
     }
-
   } else {
-
     if (document.exitFullscreen) {
       document.exitFullscreen();
     }
   }
 }
-
 
 /* ============================================================================
    EVENT LISTENERS
@@ -2078,7 +1863,6 @@ function toggleFullscreen() {
 window.addEventListener(
   "DOMContentLoaded",
   () => {
-
     console.log(
       "===================================="
     );
@@ -2096,27 +1880,23 @@ window.addEventListener(
       "===================================="
     );
 
-
-    /* ------------------------------------------------------------
+    /* ------------------------------------------------------------------------
        Start Socket
-       ------------------------------------------------------------ */
+       ------------------------------------------------------------------------ */
 
     initSocket();
 
-
-    /* ============================================================
+    /* =========================================================================
        CREATE ROOM
-       ============================================================ */
+       ========================================================================= */
 
     btnCreateRoom?.addEventListener(
       "click",
       () => {
-
         if (
           !socket ||
           !socket.connected
         ) {
-
           showToast(
             "Connecting to server...",
             "warning"
@@ -2125,15 +1905,12 @@ window.addEventListener(
           initSocket();
 
           setTimeout(() => {
-
             if (
               socket &&
               socket.connected
             ) {
-
               createRoom();
             } else {
-
               showToast(
                 "Server is not connected.",
                 "error"
@@ -2141,40 +1918,33 @@ window.addEventListener(
 
               resetActionButtons();
             }
-
-          }, 1000);
+          }, 1500);
 
           return;
         }
-
 
         createRoom();
       }
     );
 
-
-    /* ============================================================
+    /* =========================================================================
        CREATE ROOM FUNCTION
-       ============================================================ */
+       ========================================================================= */
 
     function createRoom() {
-
       btnCreateRoom.disabled = true;
 
       btnCreateRoom.innerHTML = `
         <span>Creating...</span>
       `;
 
-
       socket.emit(
         "create-room",
         (response) => {
-
           if (
             response &&
             response.success === false
           ) {
-
             resetActionButtons();
 
             showToast(
@@ -2186,9 +1956,7 @@ window.addEventListener(
         }
       );
 
-
       setTimeout(() => {
-
         if (
           btnCreateRoom.disabled &&
           connectView &&
@@ -2196,34 +1964,26 @@ window.addEventListener(
             "hidden"
           )
         ) {
-
           resetActionButtons();
-
         }
-
       }, 10000);
     }
 
-
-    /* ============================================================
+    /* =========================================================================
        JOIN ROOM
-       ============================================================ */
+       ========================================================================= */
 
     joinRoomForm?.addEventListener(
       "submit",
       (event) => {
-
         event.preventDefault();
-
 
         let code =
           passkeyInput.value
             .trim()
             .toUpperCase();
 
-
         if (!code) {
-
           showToast(
             "Please enter a valid passkey.",
             "warning"
@@ -2232,16 +1992,13 @@ window.addEventListener(
           return;
         }
 
-
-        /* --------------------------------------------------------
-           123456
-           -> VDS-123456
-           -------------------------------------------------------- */
+        /* ----------------------------------------------------------------------
+           123456 -> VDS-123456
+           ---------------------------------------------------------------------- */
 
         if (
           /^\d{6}$/.test(code)
         ) {
-
           code =
             `VDS-${code}`;
 
@@ -2249,16 +2006,13 @@ window.addEventListener(
             code;
         }
 
-
-        /* --------------------------------------------------------
-           VDS123456
-           -> VDS-123456
-           -------------------------------------------------------- */
+        /* ----------------------------------------------------------------------
+           VDS123456 -> VDS-123456
+           ---------------------------------------------------------------------- */
 
         if (
           /^VDS\d{6}$/.test(code)
         ) {
-
           code =
             `VDS-${code.slice(3)}`;
 
@@ -2266,15 +2020,13 @@ window.addEventListener(
             code;
         }
 
-
-        /* --------------------------------------------------------
+        /* ----------------------------------------------------------------------
            Validate
-           -------------------------------------------------------- */
+           ---------------------------------------------------------------------- */
 
         if (
           !/^VDS-[A-Z0-9]{6}$/.test(code)
         ) {
-
           showToast(
             "Passkey format should be VDS-XXXXXX",
             "warning"
@@ -2283,21 +2035,17 @@ window.addEventListener(
           return;
         }
 
-
         btnJoinRoom.disabled = true;
 
         btnJoinRoom.innerHTML = `
           <span>Connecting...</span>
         `;
 
-
         const joinRoom = () => {
-
           if (
             !socket ||
             !socket.connected
           ) {
-
             showToast(
               "Server is not connected.",
               "error"
@@ -2308,19 +2056,16 @@ window.addEventListener(
             return;
           }
 
-
           socket.emit(
             "join-room",
             {
               roomCode: code
             },
             (response) => {
-
               if (
                 response &&
                 response.success === false
               ) {
-
                 resetActionButtons();
 
                 showToast(
@@ -2333,27 +2078,21 @@ window.addEventListener(
           );
         };
 
-
         if (
           socket &&
           socket.connected
         ) {
-
           joinRoom();
-
         } else {
-
           initSocket();
 
           setTimeout(
             joinRoom,
-            1000
+            1500
           );
         }
 
-
         setTimeout(() => {
-
           if (
             btnJoinRoom.disabled &&
             connectView &&
@@ -2361,24 +2100,19 @@ window.addEventListener(
               "hidden"
             )
           ) {
-
             resetActionButtons();
-
           }
-
         }, 10000);
       }
     );
 
-
-    /* ============================================================
+    /* =========================================================================
        PASSKEY INPUT
-       ============================================================ */
+       ========================================================================= */
 
     passkeyInput?.addEventListener(
       "input",
       (event) => {
-
         let value =
           event.target.value
             .toUpperCase()
@@ -2389,10 +2123,9 @@ window.addEventListener(
       }
     );
 
-
-    /* ============================================================
+    /* =========================================================================
        BUTTONS
-       ============================================================ */
+       ========================================================================= */
 
     btnCopyPasskey?.addEventListener(
       "click",
@@ -2404,57 +2137,47 @@ window.addEventListener(
       sharePasskey
     );
 
-
     btnShareScreen?.addEventListener(
       "click",
       startSharingScreen
     );
-
 
     btnStopSharing?.addEventListener(
       "click",
       stopSharingScreen
     );
 
-
     btnFullscreen?.addEventListener(
       "click",
       toggleFullscreen
     );
 
-
-    /* ============================================================
+    /* =========================================================================
        LEAVE ROOM
-       ============================================================ */
+       ========================================================================= */
 
     btnLeaveRoom?.addEventListener(
       "click",
       () => {
-
         if (
           !confirm(
             "Are you sure you want to leave this room?"
           )
         ) {
-
           return;
         }
-
 
         if (
           socket &&
           socket.connected &&
           currentRoomCode
         ) {
-
           socket.emit(
             "leave-room"
           );
         }
 
-
         resetAllState();
-
 
         showToast(
           "Left room",
@@ -2463,37 +2186,32 @@ window.addEventListener(
       }
     );
 
-
-    /* ============================================================
+    /* =========================================================================
        MOBILE MENU
-       ============================================================ */
+       ========================================================================= */
 
     mobileMenuBtn?.addEventListener(
       "click",
       () => {
-
         navMenu?.classList.toggle(
           "show"
         );
       }
     );
 
-
-    /* ============================================================
+    /* =========================================================================
        NAV CONNECT
-       ============================================================ */
+       ========================================================================= */
 
     navConnectBtn?.addEventListener(
       "click",
       (event) => {
-
         if (
           roomView &&
           roomView.classList.contains(
             "hidden"
           )
         ) {
-
           event.preventDefault();
 
           document
@@ -2504,6 +2222,33 @@ window.addEventListener(
         }
       }
     );
-
   }
 );
+```
+
+**Important:** Your HTML must already load the Socket.IO client library before this `script.js`, for example:
+
+```html
+  < script src = "https://cdn.socket.io/4.8.1/socket.io.min.js" ></script >
+    <script src="script.js"></script>
+```
+
+### Now do this
+
+1. Replace your old `script.js` with the code above.
+2. Save.
+3. Run:
+
+```bash
+git add.
+git commit - m "Fix Veds production WebRTC connection"
+git push origin main
+  ```
+
+4. Wait for Vercel deployment.
+5. Open the Veds website on **two devices/browser windows**.
+6. Create the room on Device 1.
+7. Enter the passkey on Device 2.
+8. Check whether it changes to **Connected**.
+
+If it still says **WebRTC connection failed**, don't change anything else yet. Send me the **browser Console errors (F12 → Console)** from both devices; the next issue will likely be the ICE/signaling/backend event handling rather than the frontend URL.
